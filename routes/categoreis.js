@@ -1,19 +1,8 @@
 const express = require('express');
-const Joi = require('joi');
 const router = express.Router();
-const mongoose = require('mongoose');
+const { Category, validate} = require('../models/categoreis')
 
 
-const categorySchema = new mongoose.Schema({
-    name:{
-        type: String,
-        required: true,
-        minlenght: 5,
-        maxlenght: 15
-    }
-});
-
-const Category = mongoose.model('Category', categorySchema);
 
 router.get('/', async(req, res)=>{
       const categoreis = await Category
@@ -23,14 +12,9 @@ router.get('/', async(req, res)=>{
 })
 
 router.post('/', async (req, res) => {
-
-    // const validateCategory = Joi.object({ name : Joi.string().min(3).required()
-    // });
-
-    //const result = validateCategory(req.body);
-    const {error} = validateCategory(req.body)
+    const {error} = validate(req.body)
     if(error) 
-        res.status(400).send(result.error.details[0].message);
+        res.status(400).send(error.details[0].message);
         let category = new Category({
             name: req.body.name
         });
@@ -52,39 +36,31 @@ router.get('/:id', async (req, res)=> {
 });
 
 
-// router.put('/:id', (req, res)=>{
-//     const category = categories.find(c => c.id === parseInt(req.params.id));
-//     if(!category)
-//     return res.status(404).send('Berilgan Idga teng malumot topilmadi');
-     
-//     const categorySchema = Joi.object({ name : Joi.string().min(3).required()
-//     });
-//     const result = categorySchema.validate(req.body);
-//     if (result.error){
-//         return res.status(400).send(result.error.details[0].message)
-//     };
+router.put('/:id', async (req, res)=>{
+    const { error } = validate(req.body)
+    if (error)
+        return res.status(404).send(error.details[0].message);
+
+        let category = await Category.findByIdAndUpdate(req.params.id, { name: req.body.name }, {
+            new: true
+        });
+        if(!category)
+            return res.status(404).send('Berilgan Idiga teng topilmadi...');
+            res.send(category);
+        
     
-//     category.name = req.body.name;
-//     res.send(category);
-// })
+});
 
 
-// router.delete('/:id', (req, res)=>{
-//     const category = categories.find(c => c.id === parseInt(req.params.id));
-//     if(!category)
-//     return res.status(404).send('Berilgan Idga teng malumot topilmadi');
+router.delete('/:id', async (req, res)=>{
+     let category = await Category.findByIdAndRemove(req.params.id);
+    if(!category)
+    return res.status(404).send('Berilgan Idga teng malumot topilmadi');
     
-//     const categoryIndex = categories.indexOf(category);
-//     categories.splice(categoryIndex, 1);
-//     res.send(category);
-// });
+    res.send(category);
+});
 
 
 
-function validateCategory(category){
-    const schema = Joi.object({ name : Joi.string().min(3).required()
-    });
-    return schema.validate(category);
-}
 
 module.exports = router;
